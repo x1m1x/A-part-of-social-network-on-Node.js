@@ -1,0 +1,18 @@
+<div class="row">
+    {{#if error}}
+        {{ error }}
+    {{/if}}
+    <form class="col s12" action="/sign_in" method="post">
+        <div class="row">
+            <div class="input-field col s12">
+                <input id="email" placeholder="Email" type="email" name="email" required class="validate">
+            </div>
+        </div>
+        <div class="row">
+            <div class="input-field col s12">
+                <input id="password" placeholder="Password" type="password" name="password" required class="validate">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+</div>

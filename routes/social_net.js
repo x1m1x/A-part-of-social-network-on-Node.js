@@ -1,6 +1,9 @@
 const { Router } = require('express')
 const User = require('../models/user')
 const bcrypt = require('bcrypt')
+const mongo = require('mongodb')
+
+const { db_config } = require('../config')
 
 const router = Router()
 
@@ -15,7 +18,7 @@ router.get('/register', (req, res) => {
 })
 
 router.post('/register', async (req, res) => {
-    const { first_name, last_name, email, password } = req.body
+    const { password, email, first_name, last_name } = req.body
     try {
         const hashedPassword = await bcrypt.hash(password, 10)
         await User.findOne({ email }).exec()
@@ -41,8 +44,9 @@ router.post('/register', async (req, res) => {
     }
 })
 
-router.get('/sign_in', (req, res) => {
+router.get('/sign_in', async (req, res) => {
     res.render('login')
+
 })
 
 
@@ -76,18 +80,28 @@ router.post('/sign_in', async (req, res) => {
 
 })
 
+
 router.get('/profile', async (req, res) => {
-    await User.findById(req.session.userId).exec()
+    await User.findById(req.session.userId).lean().exec()
         .then(user => {
             try {
-                res.render('profile', {
-                    userid: req.session.userId,
-                    id: user.id,
-                    first_name: user.first_name,
-                    last_name: user.last_name,
-                    password: user.password
-                })
+                if (user.address) {
+                    console.log("user")
+                    res.render('profile', {
+                        userid: req.session.userId,
+                        user: user,
+                        lng: user.address.lng || undefined,
+                        lat: user.address.lat || undefined
+                    })
+                } else {
+                    res.render('profile', {
+                        userid: req.session.userId,
+                        user: user,
+                    })
+                }
+
             } catch (e) {
+                console.log(e)
                 res.redirect('/sign_in')
             }
         })
@@ -98,12 +112,13 @@ router.post('/profile', async (req, res) => {
     await User.findById(req.session.userId).exec()
         .then(user => {
             try {
-                const { password, email, first_name, last_name } = req.body
-                user.password = password
+                const { email, first_name, last_name, user_address } = req.body
                 user.email = email
                 user.first_name= first_name
                 user.last_name = last_name
                 user.save()
+                console.log(user)
+
 
                 res.redirect('/profile')
             } catch (e) {
@@ -114,11 +129,36 @@ router.post('/profile', async (req, res) => {
 
 router.post('/profile/delete',async (req, res) => {
     try {
+        await User.findByIdAndDelete(req.body.user_id)
         req.session.userId = undefined
         res.redirect('/')
     } catch (e) {
-        console.log(e)
         res.redirect('/')
+    }
+})
+
+
+router.get('/api/set_address', async (req, res) => {
+    const { user_id } = req.query
+
+    delete req.query.user_id
+
+    if (req.query.lat && req.query.lng && user_id) {
+        await User.findById(user_id).exec()
+            .then(user => {
+                if (user) {
+                    user.address = req.query
+                    console.log(user)
+                    user.save()
+                    res.status(200).send({
+                        detail: "The address updated successfully"
+                    })
+                } else {
+                    res.sendStatus(400)
+                }
+            })
+    } else {
+        res.sendStatus(400)
     }
 })
 

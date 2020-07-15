@@ -1,7 +1,7 @@
 <div class="row">
-    <h2>{{ first_name }} {{ last_name }}</h2>
+    <h2>{{ user.first_name }} {{ user.last_name }}</h2>
     <form action="profile/delete" method="post">
-        <input type="hidden" value="{{ user_id }}" name="user_id">
+        <input type="hidden" value="{{ userid }}" name="user_id" id="user_id">
         <button type="submit" class="btn waves-effect waves-light red lighten-2">Delete</button>
     </form>
     <div class="row">
@@ -11,23 +11,95 @@
             {{/if}}
             <div class="row">
                 <div class="input-field col s6">
-                    <input id="first_name" placeholder="First Name" type="text" name="first_name" required class="validate" value={{ first_name }}>
+                    <input id="first_name" placeholder="First Name" type="text" name="first_name" required class="validate" value={{ user.first_name }}>
                 </div>
                 <div class="input-field col s6">
-                    <input id="last_name" placeholder="Last Name" type="text" name="last_name" required class="validate" value={{ last_name }}>
+                    <input id="last_name" placeholder="Last Name" type="text" name="last_name" required class="validate" value={{ user.last_name }}>
                 </div>
             </div>
             <div class="row">
                 <div class="input-field col s12">
-                    <input id="password" placeholder="Password" type="password" name="password" required class="validate" value={{ password }}>
+                    <input id="email" placeholder="Email" type="email" name="email" required class="validate" value={{ user.email }}>
                 </div>
             </div>
-            <div class="row">
-                <div class="input-field col s12">
-                    <input id="email" placeholder="Email" type="email" name="email" required class="validate" value={{ email }}>
-                </div>
-            </div>
+
+            <div id="map"></div>
+
+            <input type="hidden" id="lat" value="{{ lat }}">
+            <input type="hidden" id="lng" value="{{ lng }}">
+
+
             <button type="submit" class="btn btn-primary">Save</button>
+
         </form>
     </div>
 </div>
+
+<style>
+    #map {
+        height: 600px;
+        width: 600px;
+        margin-bottom: 12px;
+    }
+</style>
+
+
+
+
+<script>
+    let map;
+    function initMap() {
+        const lat = document.getElementById('lat').value
+        const lng = document.getElementById('lng').value
+
+        map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: parseFloat(lat) || 43.231928, lng: parseFloat(lng) || 76.951997 },
+        zoom: 20
+        });
+
+        let marker
+
+        if (lng && lat) {
+            marker = new google.maps.Marker({
+                position: {lat: parseFloat(lat), lng: parseFloat(lng)},
+                map: map
+            })
+        }
+
+        google.maps.event.addListener(map, 'click', function(event) {
+            placeMarker(event.latLng);
+        })
+
+
+        function placeMarker(location) {
+            if (marker == null) {
+                marker = new google.maps.Marker({
+                    position: location,
+                    map: map
+                })
+                let user_id = document.getElementById("user_id").value
+
+                fetch(`/api/set_address?lat=${location.lat()}&lng=${location.lng()}&user_id=${user_id}`).then(res => {
+                    console.log(res.body)
+                })
+
+            } else {
+                marker.setPosition(location);
+                let user_id = document.getElementById("user_id").value
+
+                fetch(`/api/set_address?lat=${location.lat()}&lng=${location.lng()}&user_id=${user_id}`).then(res => {
+                    console.log(res.body)
+                })
+            }
+        }
+    }
+
+
+
+
+
+</script>
+
+<script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=&callback=initMap">
+</script>

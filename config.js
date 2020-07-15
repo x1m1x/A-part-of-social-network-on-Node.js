@@ -27,7 +27,7 @@ app.use(session({
 
 app.use(routes)
 
-app.use((res, req) => {
+app.use((req, res) => {
     res.sendStatus(404)
 })
 
@@ -35,7 +35,7 @@ module.exports = {
     app: app,
     port: PORT,
     db_config: {
-        url: "mongodb+srv://ximiz:ximiz@socialnet.ryyzg.mongodb.net/socialnet?retryWrites=true&w=majority",
+        url: "mongodb://localhost:27017/local",
         options: {
             useNewUrlParser: true,
             useFindAndModify: false,
